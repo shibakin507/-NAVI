@@ -470,6 +470,7 @@ function handleOrientation(e) {
 function baseLayerChage() {
     if (!baseMaps) return;
 
+    // 全てのコースレイヤーを一旦削除
     for (const key in baseMaps) {
         if (map.hasLayer(baseMaps[key])) {
             map.removeLayer(baseMaps[key]);
@@ -479,39 +480,45 @@ function baseLayerChage() {
     const sel = document.getElementById("selectBaseLayer");
     const key = sel.value;
 
-    baseMaps[key].addTo(map);
-    map.setView(baseMaps[key].getCenter(), 14);
+    // 選択されたレイヤーを表示
+    if (baseMaps[key]) {
+        baseMaps[key].addTo(map);
+        map.setView(baseMaps[key].getCenter(), 14);
+    }
 
-var chkBtn = document.getElementById("chk_btn");
-        if (chk.value = "ON") chk.value = "OFF";
-
+    // ボタンの状態を「消す（表示中）」に合わせてリセット
+    const btn = document.getElementById("chk_btn");
+    if (btn) btn.value = "消す"; 
 }
 
 /* ==================================================
    表示 ON / OFF
 ================================================== */
 function OnOff() {
-    if (chk.value === "OFF") {
-        chk.value = "ON";
-        for (const key in baseMaps) {
-            if (map.hasLayer(baseMaps[key])) {
-                map.removeLayer(baseMaps[key]);
-            }
-        }
+    const btn = document.getElementById("chk_btn");
+    const sel = document.getElementById("selectBaseLayer");
+    const key = sel.value;
+
+    if (!baseMaps[key]) return;
+
+    // 地図上にレイヤーがあるかチェック
+    if (map.hasLayer(baseMaps[key])) {
+        // 表示中なら消す
+        map.removeLayer(baseMaps[key]);
+        btn.value = "出す";
     } else {
-        chk.value = "OFF";
-        baseLayerChage();
+        // 消えているなら出す
+        baseMaps[key].addTo(map);
+        btn.value = "消す";
     }
 }
+
 </script>
 </head>
-
 <body onload="init()">
     <div id="mapcontainer"></div>
     <div id="chk">
-        <input type="button" value="出す / 消す" onclick="OnOff();">
+        <input type="button" id="chk_btn" value="出す / 消す" onclick="OnOff();">
     </div>
 </body>
 </html>
-
-
