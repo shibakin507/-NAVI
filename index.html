@@ -179,7 +179,7 @@ function init() {
 
         $.ajax({
             beforeSend: xhr => {
-                xhr.overrideMimeType('text/csv;charset=Shift_JIS');
+                xhr.overrideMimeType('text/csv;charset=UTF-8');
             },
             type: 'GET',
             dataType: 'text',
@@ -522,3 +522,4 @@ function OnOff() {
     </div>
 </body>
 </html>
+
