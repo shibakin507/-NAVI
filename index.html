@@ -60,7 +60,15 @@
 　　.leaflet-control-locate.requesting a {
    　　 color: #ff0000 !important;
 　　}
-
+　　
+  　/* 追跡が外れても、機能がONである限り赤色を維持する */
+　　.leaflet-control-locate a .leaflet-control-locate-location-arrow,
+　　.leaflet-control-locate.active a,
+　　.leaflet-control-locate.following a {
+    　　color: #ff0000 !important;
+    　　fill: #ff0000 !important;
+　　}
+  
 </style>
 
 <script>
@@ -538,3 +546,4 @@ function OnOff() {
     </div>
 </body>
 </html>
+
