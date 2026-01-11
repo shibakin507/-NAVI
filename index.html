@@ -49,6 +49,16 @@
     .leaflet-control-rotate {
         display: none !important;
     }
+   /* GPSアクティブ時（追跡中）のアイコンの色を赤にする */
+　　.leaflet-control-locate.active a {
+    　　color: #ff0000 !important;
+    　　fill: #ff0000 !important;
+　　}
+
+　　/* GPSが位置を探している最中（パルス状態）の色も赤にする場合 */
+　　.leaflet-control-locate.requesting a {
+   　　 color: #ff0000 !important;
+　　}
 </style>
 
 <script>
@@ -83,7 +93,7 @@ const myArrowIcon = L.divIcon({
             <polygon
                 id="myArrow"
                 points="30,6 52,94 30,78 8,94"
-                fill="#0000ff"
+                fill="#ff0000"
             />
 
         </svg>
@@ -124,20 +134,26 @@ function init() {
     }).addTo(map);
 
     /* ---------- GPS（Locate） ---------- */
-    const lc = L.control.locate({
-        position: "topleft",
-        flyTo: false,
-        showCompass: false,
-        drawMarker: false,
-        drawCircle: false,
+　　const lc = L.control.locate({
+    　　position: "topleft",
+    　　flyTo: false,
+    　　showCompass: false,
+    　　drawMarker: false, // 独自の▲マーカーを使う場合は false
+    　　drawCircle: false,  // 精度範囲を非表示にする場合は false
         setView: 'once',
         watch: true,
-        locateOptions: {
-            enableHighAccuracy: true
-        }
-    }).addTo(map);
+   　　 locateOptions: {
+        　　enableHighAccuracy: true
+    　　},
+    　　// アクティブ時のスタイルを指定
+   　　 locateStyle: {
+       　　 fillColor: '#ff0000',
+        　　color: '#ff0000',
+        　　fillOpacity: 0.15
+   　　 }
+　　}).addTo(map);
 
-    map.on('locateactivate',   () => setArrowColor('#0000ff'));
+    map.on('locateactivate',   () => setArrowColor('#ff0000'));
     map.on('locatedeactivate', () => setArrowColor('#999999'));
 
     map.on('locationfound', e => {
@@ -522,5 +538,6 @@ function OnOff() {
     </div>
 </body>
 </html>
+
 
 
