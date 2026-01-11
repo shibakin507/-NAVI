@@ -10,7 +10,7 @@
            user-scalable=no"
 />
 
-<title>なんちゃってNAVI</title>
+<title>なんちゃってNAVI - iOS対応版</title>
 
 <!-- ==================================================
      Leaflet / Plugins
@@ -49,7 +49,8 @@
     .leaflet-control-rotate {
         display: none !important;
     }
-   /* GPSアクティブ時（追跡中）のアイコンの色を赤にする */
+
+　　/* GPSアクティブ時（追跡中）のアイコンの色を赤にする */
 　　.leaflet-control-locate.active a {
     　　color: #ff0000 !important;
     　　fill: #ff0000 !important;
@@ -59,6 +60,7 @@
 　　.leaflet-control-locate.requesting a {
    　　 color: #ff0000 !important;
 　　}
+
 </style>
 
 <script>
@@ -139,9 +141,7 @@ function init() {
     　　flyTo: false,
     　　showCompass: false,
     　　drawMarker: false, // 独自の▲マーカーを使う場合は false
-    　　drawCircle: false,  // 精度範囲を非表示にする場合は false
-        setView: 'once',
-        watch: true,
+    　　drawCircle: false,  // 精度範囲を非表示にする場合
    　　 locateOptions: {
         　　enableHighAccuracy: true
     　　},
@@ -508,7 +508,7 @@ function baseLayerChage() {
 }
 
 /* ==================================================
-   表示 ON / OFF
+   表示 ON / OFF（修正版）
 ================================================== */
 function OnOff() {
     const btn = document.getElementById("chk_btn");
@@ -538,6 +538,3 @@ function OnOff() {
     </div>
 </body>
 </html>
-
-
-
