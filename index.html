@@ -10,7 +10,7 @@
            user-scalable=no"
 />
 
-<title>なんちゃってNAVI - iOS対応版</title>
+<title>なんちゃってNAVI（ β版 ）</title>
 
 <!-- ==================================================
      Leaflet / Plugins
@@ -49,26 +49,6 @@
     .leaflet-control-rotate {
         display: none !important;
     }
-
-　　/* GPSアクティブ時（追跡中）のアイコンの色を赤にする */
-　　.leaflet-control-locate.active a {
-    　　color: #ff0000 !important;
-    　　fill: #ff0000 !important;
-　　}
-
-　　/* GPSが位置を探している最中（パルス状態）の色も赤にする場合 */
-　　.leaflet-control-locate.requesting a {
-   　　 color: #ff0000 !important;
-　　}
-　　
-  　/* 追跡が外れても、機能がONである限り赤色を維持する */
-　　.leaflet-control-locate a .leaflet-control-locate-location-arrow,
-　　.leaflet-control-locate.active a,
-　　.leaflet-control-locate.following a {
-    　　color: #ff0000 !important;
-    　　fill: #ff0000 !important;
-　　}
-  
 </style>
 
 <script>
@@ -103,7 +83,7 @@ const myArrowIcon = L.divIcon({
             <polygon
                 id="myArrow"
                 points="30,6 52,94 30,78 8,94"
-                fill="#ff0000"
+                fill="#0000ff"
             />
 
         </svg>
@@ -144,24 +124,20 @@ function init() {
     }).addTo(map);
 
     /* ---------- GPS（Locate） ---------- */
-　　const lc = L.control.locate({
-    　　position: "topleft",
-    　　flyTo: false,
-    　　showCompass: false,
-    　　drawMarker: false, // 独自の▲マーカーを使う場合は false
-    　　drawCircle: false,  // 精度範囲を非表示にする場合
-   　　 locateOptions: {
-        　　enableHighAccuracy: true
-    　　},
-    　　// アクティブ時のスタイルを指定
-   　　 locateStyle: {
-       　　 fillColor: '#ff0000',
-        　　color: '#ff0000',
-        　　fillOpacity: 0.15
-   　　 }
-　　}).addTo(map);
+    const lc = L.control.locate({
+        position: "topleft",
+        flyTo: false,
+        showCompass: false,
+        drawMarker: false,
+        drawCircle: false,
+        setView: 'once',
+        watch: true,
+        locateOptions: {
+            enableHighAccuracy: true
+        }
+    }).addTo(map);
 
-    map.on('locateactivate',   () => setArrowColor('#ff0000'));
+    map.on('locateactivate',   () => setArrowColor('#0000ff'));
     map.on('locatedeactivate', () => setArrowColor('#999999'));
 
     map.on('locationfound', e => {
@@ -516,7 +492,7 @@ function baseLayerChage() {
 }
 
 /* ==================================================
-   表示 ON / OFF（修正版）
+   表示 ON / OFF
 ================================================== */
 function OnOff() {
     const btn = document.getElementById("chk_btn");
@@ -546,4 +522,3 @@ function OnOff() {
     </div>
 </body>
 </html>
-
