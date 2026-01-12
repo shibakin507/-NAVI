@@ -448,7 +448,11 @@ function setupOrientation() {
             DeviceOrientationEvent.requestPermission()
                 .then(res => {
                     if (res === 'granted') {
-                        window.addEventListener('deviceorientation', handleOrientation, true);
+                        window.addEventListener(
+                            'deviceorientation',
+                            handleOrientation,
+                            true
+                        );
                     }
                 })
                 .catch(console.error);
@@ -464,8 +468,8 @@ function setupOrientation() {
         }
     };
 
-    // ユーザー操作で起動
-    document.body.addEventListener('click', requestPermission, { once: true });
+    // ★ Locate ボタン起動をユーザー操作として使う
+    map.on('locateactivate', requestPermission);
 }
 
 function handleOrientation(e) {
@@ -545,4 +549,5 @@ function OnOff() {
     </div>
 </body>
 </html>
+
 
