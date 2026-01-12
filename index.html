@@ -49,6 +49,29 @@
     .leaflet-control-rotate {
         display: none !important;
     }
+
+/* GPS ON 中だけ Locate ボタンを鼓動させる */
+@keyframes locatePulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.6);
+    }
+    70% {
+        transform: scale(1.15);
+        box-shadow: 0 0 0 12px rgba(0, 0, 0, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+    }
+}
+
+/* GPS ON（追跡中）のときだけ */
+.leaflet-control-locate.active a {
+    animation: locatePulse 1.2s infinite;
+    border-radius: 50%;
+}
+  
 </style>
 
 <script>
@@ -522,3 +545,4 @@ function OnOff() {
     </div>
 </body>
 </html>
+
