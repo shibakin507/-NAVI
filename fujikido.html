@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+
+<title>富士軌道NAVI</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="https://shibakin507.github.io/-NAVI/dist/L.Control.Locate.min.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
+<script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
+
+<style>
+html, body, #mapcontainer {
+    height: 100%;
+    margin: 0;
+}
+
+.leaflet-compass,
+.leaflet-control-rotate {
+    display: none !important;
+}
+
+@keyframes pulseArrow {
+    0% { transform: scale(1); filter: drop-shadow(0 0 0px red); }
+    50% { transform: scale(1.28); filter: drop-shadow(0 0 14px red); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 0px red); }
+}
+.arrow-svg.pulsing {
+    animation: pulseArrow 1.1s ease-in-out infinite;
+    transform-origin: center;
+}
+</style>
+</head>
+
+<body>
+<div id="mapcontainer"></div>
+
+<script>
+let map;
+let myMarker = null;
+let currentBearing = 0;
+const smooth = 0.15;
+let isLocateActive = false;
+
+/* ---------- 現在地アイコン ---------- */
+const myArrowIcon = L.divIcon({
+    className: '',
+    html: `
+    <svg class="arrow-svg" width="36" height="48" viewBox="0 0 60 100">
+        <polygon points="34,8 58,100 34,84 10,100" fill="rgba(0,0,0,0.5)"/>
+        <polygon points="30,2 56,98 30,80 4,98" fill="#ffffff"/>
+        <polygon id="myArrow" points="30,6 52,94 30,78 8,94" fill="#ff0000"/>
+    </svg>`,
+    iconSize: [24, 36],
+    iconAnchor: [12, 18]
+});
+
+/* ---------- 初期化 ---------- */
+function init() {
+
+    map = L.map('mapcontainer', {
+        zoomControl: false,
+        rotate: true,
+        bearing: 0
+    }).setView([35.28, 138.615], 13);
+
+    /* ===== ベース地図 ===== */
+    const gsiStd = L.tileLayer(
+        'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',
+        { attribution: "地理院地図（標準）", maxZoom: 18 }
+    );
+
+    const gsiPhoto = L.tileLayer(
+        'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',
+        { attribution: "地理院地図（衛星）", maxZoom: 18 }
+    );
+
+    const osm = L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        { attribution: "© OpenStreetMap contributors", maxZoom: 19 }
+    ).addTo(map);
+
+    const baseMaps = {
+        "国土地理院（標準）": gsiStd,
+        "国土地理院（衛星）": gsiPhoto,
+        "OpenStreetMap": osm
+    };
+
+   /* ===== コース画像（オーバーレイ） ===== */
+const overlays = {};
+
+
+
+
+const courseData = [
+    {
+        name: "富士軌道の路線跡",
+        file: "fujikido.jpg",
+        bounds: [[35.403288, 138.582337], [35.214560, 138.650]],
+        opacity: 0.7
+    },
+
+////////////////追加する場合/////////////////////
+/*  {
+        name: "第二コース",
+        file: "course2.jpg",
+        bounds: [[35.39, 138.58], [35.23, 138.66]],
+        opacity: 0.6
+    },
+    {
+        name: "テストコースA",
+        file: "trialA.png",
+        bounds: [[35.37, 138.60], [35.25, 138.64]],
+        opacity: 0.8
+    }
+*/
+/////////////////////////////////////////////////
+
+];
+
+
+courseData.forEach(c => {
+    const layer = L.imageOverlay(
+        `data/${c.file}`,
+        c.bounds,
+        { opacity: c.opacity }
+    );
+
+
+if (c.name === "富士軌道の路線跡") {
+        layer.addTo(map);   // ← ★デフォルト時に表示させる
+    }
+
+    overlays[c.name] = layer;
+});
+
+
+
+///////////マークポイント1////////////////
+
+const pointIcon = L.icon({
+    iconUrl: 'marker/red.png',   // ポイント画像
+    iconSize: [25, 41],
+    iconAnchor: [10, 43],
+    shadowUrl: 'marker/shadow.png',
+    shadowSize: [41, 41],
+    shadowAnchor: [10, 43]
+});
+
+
+const pointData = [
+    { lat: 35.224526, lng: 138.616476, name: "大宮（本社）" },
+    { lat: 35.229022, lng: 138.613032, name: "浅間" },
+    { lat: 35.240554, lng: 138.614438, name: "三軒家" },
+    { lat: 35.250123, lng: 138.616744, name: "万野" },
+    { lat: 35.259471, lng: 138.618912, name: "山宮" },
+    { lat: 35.267959, lng: 138.615961, name: "蒲沢" },
+    { lat: 35.274608, lng: 138.610940, name: "本門寺" },
+    { lat: 35.280761, lng: 138.610141, name: "峰" },
+    { lat: 35.285630, lng: 138.607652, name: "堀久保" },
+    { lat: 35.299602, lng: 138.598945, name: "中井出" },
+　　{ lat: 35.304545, lng: 138.595083, name: "上井出" }
+];
+
+
+const pointLayer1 = L.layerGroup();
+
+pointData.forEach(p => {
+    L.marker([p.lat, p.lng], { icon: pointIcon })
+        .bindPopup(p.name)
+        .addTo(pointLayer1);
+});
+
+pointLayer1.addTo(map);   // ★ デフォルトON
+overlays["駅の場所（推定）"] = pointLayer1;
+
+////////////////////////////////////////
+
+const pointIcon2 = L.icon({
+    iconUrl: 'marker/unknown.png',   // ポイント画像
+    iconSize: [25, 41],
+    iconAnchor: [10, 43],
+    shadowUrl: 'marker/shadow.png',
+    shadowSize: [41, 41],
+    shadowAnchor: [10, 43]
+});
+
+
+
+const pointData2 = [
+    { lat: 35.255450, lng: 138.618171, name: "十石 (位置不明)" },
+    { lat: 35.292308, lng: 138.608193, name: "大久保 (位置不明)" },
+    { lat: 35.296703, lng: 138.603387, name: "二軒屋 (位置不明)" },
+    { lat: 35.338497, lng: 138.600061, name: "人穴 (位置不明)" },
+];
+
+
+const pointLayer2 = L.layerGroup();
+
+pointData2.forEach(p => {
+    L.marker([p.lat, p.lng], { icon: pointIcon2 })
+        .bindPopup(p.name)
+        .addTo(pointLayer2);
+});
+
+overlays["駅の場所（不明）"] = pointLayer2;
+
+
+
+
+    /* ===== レイヤー切替UI ===== */
+    L.control.layers(baseMaps, overlays, {
+        position: "topright",
+        collapsed: false
+    }).addTo(map);
+
+    L.control.scale({ imperial: false }).addTo(map);
+
+    /* ===== GPS（Locate） ===== */
+    const lc = L.control.locate({
+        position: "topleft",
+        drawMarker: false,
+        drawCircle: false,
+        watch: true,
+        setView: 'once',
+        locateOptions: { enableHighAccuracy: true }
+    }).addTo(map);
+
+    
+
+
+　　function setArrowColor(color) {
+    　　const arrow = myMarker?.getElement()?.querySelector('#myArrow');
+    　　if (!arrow) return;
+    　　arrow.setAttribute('fill', color);
+　　}
+
+
+
+　　map.on('locateactivate', () => {
+    　　isLocateActive = true;
+    　　setArrowColor('#ff0000');   // 赤
+    　　requestOrientationPermission();
+　　});
+
+    map.on('locatedeactivate', () => {
+        isLocateActive = false;
+        setArrowPulse(false);
+　　　　setArrowColor('#888888');   // グレー
+    });
+
+    map.on('locationfound', e => {
+        if (!myMarker) {
+            myMarker = L.marker(e.latlng, { icon: myArrowIcon }).addTo(map);
+        } else {
+            myMarker.setLatLng(e.latlng);
+        }
+        setArrowPulse(true);
+    });
+}
+
+/* ---------- 鼓動 ---------- */
+function setArrowPulse(on) {
+    const svg = myMarker?.getElement()?.querySelector('.arrow-svg');
+    if (!svg) return;
+    svg.classList.toggle('pulsing', on);
+}
+
+/* ---------- 方位センサー ---------- */
+function requestOrientationPermission() {
+    if (typeof DeviceOrientationEvent?.requestPermission === "function") {
+        DeviceOrientationEvent.requestPermission().then(res => {
+            if (res === 'granted')
+                window.addEventListener('deviceorientation', handleOrientation, true);
+        });
+    } else {
+        window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    }
+}
+
+function handleOrientation(e) {
+    let heading = e.webkitCompassHeading || e.alpha;
+    if (!heading) return;
+    const diff = ((heading - currentBearing + 540) % 360) - 180;
+    currentBearing += diff * smooth;
+    map.setBearing(currentBearing);
+}
+
+init();
+</script>
+</body>
+</html>
