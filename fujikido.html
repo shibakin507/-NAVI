@@ -69,11 +69,6 @@ function init() {
     }).setView([35.28, 138.615], 13);
 
     /* ===== ベース地図 ===== */
-    const gsiStd = L.tileLayer(
-        'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',
-        { attribution: "地理院地図（標準）", maxZoom: 18 }
-    );
-
     const gsiPhoto = L.tileLayer(
         'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',
         { attribution: "地理院地図（衛星）", maxZoom: 18 }
@@ -85,17 +80,12 @@ function init() {
     ).addTo(map);
 
     const baseMaps = {
-        "国土地理院（標準）": gsiStd,
         "国土地理院（衛星）": gsiPhoto,
         "OpenStreetMap": osm
     };
 
    /* ===== コース画像（オーバーレイ） ===== */
 const overlays = {};
-
-
-
-
 const courseData = [
     {
         name: "富士軌道の路線跡",
@@ -175,7 +165,7 @@ pointData.forEach(p => {
         .addTo(pointLayer1);
 });
 
-pointLayer1.addTo(map);   // ★ デフォルトON
+//pointLayer1.addTo(map);   // ★ デフォルトON
 overlays["駅の場所（推定）"] = pointLayer1;
 
 ////////////////////////////////////////
@@ -207,7 +197,8 @@ pointData2.forEach(p => {
         .addTo(pointLayer2);
 });
 
-overlays["駅の場所（不明）"] = pointLayer2;
+//pointLayer2.addTo(map);   // ★ デフォルトON
+//overlays["駅の場所（不明）"] = pointLayer2;
 
 
 
@@ -221,23 +212,30 @@ overlays["駅の場所（不明）"] = pointLayer2;
     L.control.scale({ imperial: false }).addTo(map);
 
     /* ===== GPS（Locate） ===== */
+
 　　const DummyMarker = L.Marker.extend({
     initialize: function () {},
     onAdd: function () {},
     onRemove: function () {}
 　　});
-      
-    const lc = L.control.locate({
-        position: "topleft",
-        drawMarker: true,          // ← false ではダメ
-        drawCircle: false,
-        markerClass: DummyMarker, // ★ これが超重要
-      　watch: true,
-        setView: 'once',
-        locateOptions: { enableHighAccuracy: true }
-    }).addTo(map);
 
-  
+
+
+
+    const lc = L.control.locate({
+    position: "topleft",
+    drawMarker: true,          // ← false ではダメ
+    drawCircle: false,
+    markerClass: DummyMarker, // ★ これが超重要
+    watch: true,
+    setView: 'once',
+    locateOptions: { enableHighAccuracy: true }
+　　}).addTo(map);
+
+
+    
+
+
 　　function setArrowColor(color) {
     　　const arrow = myMarker?.getElement()?.querySelector('#myArrow');
     　　if (!arrow) return;
@@ -299,4 +297,3 @@ init();
 </script>
 </body>
 </html>
-
