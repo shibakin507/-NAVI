@@ -213,24 +213,21 @@ pointData2.forEach(p => {
 
     /* ===== GPS（Locate） ===== */
 
-　　const DummyMarker = L.Marker.extend({
-    initialize: function () {},
-    onAdd: function () {},
-    onRemove: function () {}
-　　});
+　　
 
 
 
 
     const lc = L.control.locate({
-    position: "topleft",
-    drawMarker: true,          // ← false ではダメ
-    drawCircle: false,
-    markerClass: DummyMarker, // ★ これが超重要
-    watch: true,
-    setView: 'once',
-    locateOptions: { enableHighAccuracy: true }
+    　position: "topleft",
+    　drawMarker: false,      // ← これが最重要
+    　drawCircle: false,
+    　showCompass: false,     // ← これを追加
+    　watch: true,
+    　setView: 'once',
+    　locateOptions: { enableHighAccuracy: true }
 　　}).addTo(map);
+
 
 
     
@@ -257,18 +254,10 @@ pointData2.forEach(p => {
     });
 
 
-function removeDefaultLocateMarker() {
-    map.eachLayer(layer => {
-        if (layer instanceof L.Marker && !layer.options.icon) {
-            map.removeLayer(layer);
-        }
-    });
-}
+
 
 
 map.on('locationfound', e => {
-
-    removeDefaultLocateMarker();   // 水色▲消し
 
     if (!myMarker) {
         myMarker = L.marker(e.latlng, { icon: myArrowIcon }).addTo(map);
