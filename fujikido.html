@@ -221,18 +221,23 @@ overlays["駅の場所（不明）"] = pointLayer2;
     L.control.scale({ imperial: false }).addTo(map);
 
     /* ===== GPS（Locate） ===== */
+　　const DummyMarker = L.Marker.extend({
+    initialize: function () {},
+    onAdd: function () {},
+    onRemove: function () {}
+　　});
+      
     const lc = L.control.locate({
         position: "topleft",
-        drawMarker: false,
+        drawMarker: true,          // ← false ではダメ
         drawCircle: false,
-        watch: true,
+        markerClass: DummyMarker, // ★ これが超重要
+      　watch: true,
         setView: 'once',
         locateOptions: { enableHighAccuracy: true }
     }).addTo(map);
 
-    
-
-
+  
 　　function setArrowColor(color) {
     　　const arrow = myMarker?.getElement()?.querySelector('#myArrow');
     　　if (!arrow) return;
@@ -294,3 +299,4 @@ init();
 </script>
 </body>
 </html>
+
