@@ -256,14 +256,39 @@ pointData2.forEach(p => {
 　　　　setArrowColor('#888888');   // グレー
     });
 
-    map.on('locationfound', e => {
-        if (!myMarker) {
-            myMarker = L.marker(e.latlng, { icon: myArrowIcon }).addTo(map);
-        } else {
-            myMarker.setLatLng(e.latlng);
+
+function removeDefaultLocateMarker() {
+    map.eachLayer(layer => {
+        if (layer instanceof L.Marker && !layer.options.icon) {
+            map.removeLayer(layer);
         }
-        setArrowPulse(true);
     });
+}
+
+
+map.on('locationfound', e => {
+
+    removeDefaultLocateMarker();   // 水色▲消し
+
+    if (!myMarker) {
+        myMarker = L.marker(e.latlng, { icon: myArrowIcon }).addTo(map);
+    } else {
+        myMarker.setLatLng(e.latlng);
+    }
+
+    // ★ ここが超重要
+    if (isLocateActive) {
+        setArrowColor('#ff0000');   // GPS ONなら赤
+    } else {
+        setArrowColor('#888888');   // GPS OFFならグレー
+    }
+
+    setArrowPulse(true);
+});
+
+
+    
+
 }
 
 /* ---------- 鼓動 ---------- */
