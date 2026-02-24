@@ -80,9 +80,6 @@ html, body, #mapcontainer {
 }
 
 
-
-
-
 </style>
 </head>
 
@@ -197,34 +194,102 @@ const pointData = [
     { 
         lat: 35.224693, 
         lng: 138.616712, 
-        name: "【大宮】<BR>起点（本社所在地）<BR>電話配置<BR>口コミ情報による場所は<BR>「中央町11の7番地」",
-        img: "data/omiya.jpg"
+        name: "【大宮】<BR><BR>起点（本社所在地）<BR>中央町11の7番地",
+        img: "images/omiya.jpg"
     },
 
     { 
         lat: 35.229513, 
         lng: 138.612292, 
-        name: "【浅間】<BR>行違い複線区域<BR>口コミ情報による場所は<BR>「浅間大社裏手」",
-        img: "data/asama.jpg"
+        name: "【浅間】<BR><BR>浅間大社裏手",
+        img: "images/asama.jpg"
     },
 
+    { 
+        lat: 35.240432, 
+        lng: 138.614759, 
+        name: "【三軒家】<BR><BR>下の写真は地図情報による場所で、口コミ情報では「三園平1051番地辺り」とあり、下の写真の場所とは若干違う",
+   //     img: "images/.jpg"
+    },
 
+　   { 
+　　　　lat: 35.249965,
+　　　　lng: 138.617141, 
+　　　　name: "【万野】<BR><BR>元ビラ江戸屋ボール東側国道敷内", 
+        img: "images/manno.jpg"
+    },
 
-    { lat: 35.240432, lng: 138.614759, name: "【三軒家】<BR>行違い複線区域<BR>口コミ情報による場所は<BR>「三園平1051番地辺り」" },
-    { lat: 35.249965, lng: 138.617141, name: "【万野】<BR>行違い複線区域<BR>口コミ情報による場所は<BR>「元ビラ江戸屋ボール東側国<BR>道敷内」" },
-  　{ lat: 35.259339, lng: 138.618300, name: "【山宮】<BR>地図以外の情報なし<BR>万野～山宮間に「十石」駅があったらしい" },
-    { lat: 35.268292, lng: 138.615661, name: "【蒲沢】<BR>行違い複線区域<BR>口コミ情報による場所は<BR>「不明」" },
-    { lat: 35.275405, lng: 138.610146, name: "【本門寺】<BR>行違い複線区域<BR>口コミ情報による場所は<BR>「本門寺東側」" },
-    { lat: 35.280695, lng: 138.609009, name: "【峰】<BR>地図以外の情報なし" },
-    { lat: 35.286300, lng: 138.607507, name: "【堀久保】<BR>行違い複線区域<BR>電話配置<BR>口コミ情報による場所は<BR>「北山堀久保井出種蓄牧場辺<BR>り」" },
- // { lat: 35.2857, lng: 138.609, name: "【大久保】<BR>地図以外の情報なし" },
-    { lat: 35.295828, lng: 138.602432, name: "【二軒屋】<BR>行違い複線区域<BR>地図には明記されていないが<BR>口コミ情報による場所は<BR>「北山棧（さ）敷3106番地辺り」<BR>堀久保～二軒屋間に「大久保」駅があったらしい" },
-    { lat: 35.299506, lng: 138.598495, name: "【中井出】<BR>行違い複線区域<BR>口コミ情報による場所は<BR>「北山3008番地北側」" },
-　　{ lat: 35.304426, lng: 138.594825, name: "【上井出】<BR>一期線の終点駅<BR>電話配置<BR>口コミ情報による場所は<BR>「元きどう食堂の所」<BR>「上井出字新田131番地の1・135号」<BR>" },
-　　{ lat: 35.352394, lng: 138.615500, name: "【駒立測点】<BR>二期線の終点駅<BR>広見付近か？" },
-    { lat: 35.381274, lng: 138.647858, name: "【大平土場】<BR>三期線の終点駅<BR>地図以外の情報なし" },
-    { lat: 35.399615, lng: 138.634372, name: "【判立場】<BR>三期線の終点駅<BR>地図以外の情報なし" },
+  　{ 
+        lat: 35.259339,
+        lng: 138.618300, 
+        name: "【山宮】<BR><BR>万野～山宮間に「十石」駅があったらしいが不明",
+        img: "images/yamamiya.jpg"
+    },
 
+    { 
+        lat: 35.268292, 
+        lng: 138.615661, 
+        name: "【蒲沢】",
+ //       img: "images/.jpg"
+    },
+
+    { 
+        lat: 35.275405, 
+        lng: 138.610146, 
+        name: "【本門寺】<BR><BR>本門寺の東側",
+　//　　　img: "images/.jpg"
+ 　 },
+
+    {  lat: 35.280695, 
+        lng: 138.609009, 
+        name: "【峰】",
+  //      img: "images/.jpg"
+    },
+
+    {   lat: 35.286300, 
+        lng: 138.607507, 
+        name: "【堀久保】<BR><BR>北山堀久保井出種蓄牧場辺り",
+   //     img: "images/.jpg"
+    },
+
+    {   lat: 35.295828, 
+        lng: 138.602432, 
+        name: "【二軒屋】<BR><BR>北山棧（さ）敷3106番地辺り <BR>堀久保～二軒屋間に「大久保」駅があったらしい",
+    //    img: "images/.jpg"
+    },
+
+    { 
+        lat: 35.299506, 
+        lng: 138.598495, 
+        name: "【中井出】<BR><BR>北山3008番地北側",
+   //     img: "images/.jpg"
+    },
+
+　　{   lat: 35.304426, 
+        lng: 138.594825, 
+        name: "【上井出】<BR><BR>一期線の終点駅<BR>元「きどう食堂」の所<BR>上井出字新田131番地の1・135号",
+        img: "images/kamiide.jpg"
+    },
+
+　　{ 
+        lat: 35.352394, 
+        lng: 138.615500, 
+        name: "【駒立測点】<BR><BR>二期線の終点駅<BR>広見付近",
+        img: "images/komadate.jpg"
+    },
+
+    {  
+        lat: 35.381274, 
+        lng: 138.647858, 
+        name: "【大平土場】<BR><BR>三期線の終点駅",
+   //     img: "images/.jpg" 
+    },
+
+    {   lat: 35.399615, 
+        lng: 138.634372, 
+        name: "【判立場】<BR><BR>三期線の終点駅",
+    //    img: "images/.jpg"
+    },
     
 ];
 
@@ -232,31 +297,45 @@ const pointLayer1 = L.layerGroup();
 
 pointData.forEach(p => {
 
-    const popupContent = `
-        <div style="text-align:center;">
-            ${p.name}
-            <br><br>
-            <img src="${p.img}" 
-                 style="width:150px;height:110px;object-fit:cover;border-radius:8px;cursor:pointer;"
-                 onclick="openImage('${p.img}')">
-            <div style="font-size:12px;color:#666;margin-top:6px;">
-                ※タップで拡大
+    let popupContent;
+
+    if (p.img) {
+        popupContent = `
+            <div style="text-align:center;">
+                ${p.name}
+                <br><br>
+                <img src="${p.img}" 
+                     style="width:150px;height:110px;object-fit:cover;border-radius:8px;cursor:pointer;"
+                     onclick="openImage('${p.img}')">
+                <div style="font-size:12px;color:#666;margin-top:6px;">
+                    ※タップで拡大
+                </div>
             </div>
-        </div>
-    `;
+        `;
+    } else {
+        popupContent = `
+            <div style="text-align:center;">
+                ${p.name}
+                <br><br>
+                <div style="font-size:13px;color:#888;">
+                    画像は準備中です
+                </div>
+            </div>
+        `;
+    }
 
     L.marker([p.lat, p.lng], { icon: pointIcon })
         .bindPopup(popupContent, { maxWidth: 250 })
         .addTo(pointLayer1);
 });
 
-//pointLayer1.addTo(map);   // ★ デフォルトON
-overlays["駅の位置（推定）"] = pointLayer1;
+pointLayer1.addTo(map);   // ★ デフォルトON
+overlays["駅の位置"] = pointLayer1;
 
 ////////////////////////////////////////
 
 const pointIcon2 = L.icon({
-    iconUrl: 'marker/unknown.png',   // ポイント画像
+    iconUrl: 'marker/yellow.png',   
     iconSize: [25, 41],
     iconAnchor: [10, 43],
     shadowUrl: 'marker/shadow.png',
@@ -267,23 +346,101 @@ const pointIcon2 = L.icon({
 
 
 const pointData2 = [
-    { lat: 35.255450, lng: 138.618171, name: "十石 (位置不明)" },
-    { lat: 35.292308, lng: 138.608193, name: "大久保 (位置不明)" },
-    { lat: 35.296703, lng: 138.603387, name: "二軒屋 (位置不明)" },
-    { lat: 35.338497, lng: 138.600061, name: "人穴 (位置不明)" },
+    { 
+     lat: 35.233145, 
+     lng: 138.611932, 
+     name: "【明治の曲り松】<BR><BR>行違い複線区域<BR>口コミ情報による場所は<BR>「浅間大社裏手」",
+     img: "images/magarimatsu.jpg"
+     },
+
+    { 
+     lat: 35.233404, 
+     lng: 138.612345, 
+     name: "【現在の曲り松】<BR><BR>行違い複線区域<BR>口コミ情報による場所は<BR>「浅間大社裏手」",
+     img: "images/newmagarimatsu.jpg"
+     },
+
+    { 
+     lat: 35.254254, 
+     lng: 138.616739, 
+     name: "【万野の三角地】<BR><BR>行違い複線区域<BR>口コミ情報による場所は<BR>「浅間大社裏手」",
+     img: "images/mannotriangle.jpg"
+     },
+
+    { 
+     lat: 35.306860, 
+     lng: 138.594723, 
+     name: "【上井出歴史広場】<BR><BR>行違い複線区域<BR>口コミ情報による場所は<BR>「浅間大社裏手」",
+     img: "images/k_historypark.jpg"
+     },
+
+    { 
+     lat: 35.307276, 
+     lng: 138.594326, 
+     name: "【築堤と橋台】<BR><BR>行違い複線区域<BR>口コミ情報による場所は<BR>「浅間大社裏手」",
+     img: "images/chikutei.jpg"
+     },
+
+    { 
+     lat: 35.338181, 
+     lng: 138.593988, 
+     name: "【駒立観音】<BR><BR>行違い複線区域<BR>口コミ情報による場所は<BR>「浅間大社裏手」",
+     img: "images/komadatekannon.jpg"
+     },
+
+    { 
+     lat: 35.387511, 
+     lng: 138.634758, 
+     name: "【供養塔】<BR><BR>行違い複線区域<BR>口コミ情報による場所は<BR>「浅間大社裏手」",
+ //    img: "images/.jpg"
+     },
+
 ];
 
 
 const pointLayer2 = L.layerGroup();
 
+
 pointData2.forEach(p => {
+
+    let popupContent;
+
+    if (p.img) {
+        popupContent = `
+            <div style="text-align:center;">
+                ${p.name}
+                <br><br>
+                <img src="${p.img}" 
+                     style="width:150px;height:110px;object-fit:cover;border-radius:8px;cursor:pointer;"
+                     onclick="openImage('${p.img}')">
+                <div style="font-size:12px;color:#666;margin-top:6px;">
+                    ※タップで拡大
+                </div>
+            </div>
+        `;
+    } else {
+        popupContent = `
+            <div style="text-align:center;">
+                ${p.name}
+                <br><br>
+                <div style="font-size:13px;color:#888;">
+                    画像は準備中です
+                </div>
+            </div>
+        `;
+    }
+
     L.marker([p.lat, p.lng], { icon: pointIcon2 })
-        .bindPopup(p.name)
+        .bindPopup(popupContent, { maxWidth: 250 })
         .addTo(pointLayer2);
 });
 
-//pointLayer2.addTo(map);   // ★ デフォルトON
-//overlays["駅の場所（不明）"] = pointLayer2;
+
+
+
+
+//pointLayer2.addTo(map);   // ★ デフォルトOFF
+overlays["見所ポイント"] = pointLayer2;
 
 
 
