@@ -474,8 +474,8 @@ overlays["見所ポイント"] = pointLayer2;
 /* ---------- レイヤーコンテナ ------------- */
 
     L.control.layers(baseMaps, overlays, {
-        position: "bottomleft",
-        collapsed: false
+        position: "topleft",
+        collapsed: true
     }).addTo(map);
 
 /* ---------- 地図スケール ------------- */
@@ -610,6 +610,7 @@ document.getElementById("imageModal").addEventListener("click", function (e) {
 
 </body>
 </html>
+
 
 
 
