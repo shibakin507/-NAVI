@@ -125,8 +125,8 @@ function init() {
         compass: false
     });
 
-    const startPoint = [35.35, 138.57];
-    map.setView(startPoint, 11);
+  //  const startPoint = [35.35, 138.57];
+  //  map.setView(startPoint, 11);
 
     L.tileLayer(
         'https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}',
@@ -249,9 +249,9 @@ map.on('locationfound', e => {
 const courseData = [
     {
         name: " ( コース図を選択してください )",
-        file: "banner.png",
-        bounds: [[35.3460, 138.6742], [35.3208, 138.6971]],
-        opacity: 1.0
+        file: "all.jpg",
+        bounds: [[35.3795, 138.5172], [35.1830, 138.6705]],
+        opacity: 1.0,
     },
     {
         name: "A.猪之頭 / 湧水を活かした産業",
@@ -539,9 +539,9 @@ function baseLayerChange() {
 
     // 選択されたレイヤーを表示
     if (baseMaps[key]) {
-        baseMaps[key].addTo(map);
-        map.setView(baseMaps[key].getCenter(), 14);
-    }
+    baseMaps[key].addTo(map);
+    map.fitBounds(baseMaps[key].getBounds());
+}
 
     // ボタンの状態を「消す（表示中）」に合わせてリセット
     const btn = document.getElementById("chk_btn");
