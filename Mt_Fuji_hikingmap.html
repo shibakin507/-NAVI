@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+
+<title>Mt.FUJIハイキングマップNAVI</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="https://shibakin507.github.io/-NAVI/dist/L.Control.Locate.min.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
+<script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
+
+
+<script src="dist/jquery.min.js"></script>
+<script src="dist/leaflet.geocsv.js"></script>
+
+
+
+
+
+
+
+<style>
+/* =============================
+   基本レイアウト
+============================= */
+html, body, #mapcontainer {
+    height: 100%;
+    margin: 0;
+}
+
+/* 回転UIは非表示 */
+.leaflet-compass,
+.leaflet-control-rotate {
+    display: none !important;
+}
+
+/* =============================
+   現在地アイコンの鼓動アニメーション
+============================= */
+@keyframes pulseArrow {
+    0% { transform: scale(1); filter: drop-shadow(0 0 0px red); }
+    50% { transform: scale(1.28); filter: drop-shadow(0 0 14px red); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 0px red); }
+}
+.arrow-svg.pulsing {
+    animation: pulseArrow 1.1s ease-in-out infinite;
+    transform-origin: center;
+}
+
+
+
+</style>
+</head>
+
+<body>
+<div id="mapcontainer"></div>
+
+<script>
+/* ==========================================================
+   グローバル変数
+========================================================== */
+let map;
+let myMarker = null;
+let currentBearing = 0;
+const smooth = 0.15;
+let isLocateActive = false;
+
+/* ==========================================================
+   現在地アイコン（SVG矢印）
+========================================================== */
+
+const myArrowIcon = L.divIcon({
+    className: '',
+    html: `
+    <svg class="arrow-svg" width="36" height="48" viewBox="0 0 60 100">
+        <polygon points="34,8 58,100 34,84 10,100" fill="rgba(0,0,0,0.5)"/>
+        <polygon points="30,2 56,98 30,80 4,98" fill="#ffffff"/>
+        <polygon id="myArrow" points="30,6 52,94 30,78 8,94" fill="#ff0000"/>
+    </svg>`,
+    iconSize: [24, 36],
+    iconAnchor: [12, 18]
+});
+
+
+
+/* ==========================================================
+   初期化
+========================================================== */
+function init() {
+    
+    /* ---------- 地図生成 ---------- */
+    map = L.map('mapcontainer', {
+        zoomControl: false,
+        rotate: true,
+        bearing: 0
+    }).setView([35.3366, 138.7326], 13);
+
+    /* ---------- ベース地図 ---------- */
+
+var gsiattr = "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル</a>";
+    
+
+    const gsi = L.tileLayer(
+        'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', 
+        { attribution: gsiattr, maxZoom: 18 }
+    ).addTo(map);
+
+    const gsiPhoto = L.tileLayer(
+        'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',
+        { attribution: gsiattr, maxZoom: 18 }
+    );
+
+　　const osm = L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        { attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', maxZoom: 18 }
+    );
+
+    const google = L.tileLayer(
+        'https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', 
+        { attribution: "<a href='https://developers.google.com/maps/documentation' target='_blank'>Google Map</a>"}
+    );
+
+
+/* ---------- オーバーレイ地図 ---------- */
+
+    const gsirehillshademap = L.tileLayer(
+        'http://cyberjapandata.gsi.go.jp/xyz/hillshademap/{z}/{x}/{y}.png', 
+        { opacity: 1.0, maxNativeZoom: 16, attribution: gsiattr }
+    );
+
+    const bounds = L.latLngBounds( 
+    　　[35.3905, 138.6709] , [35.2745, 138.8222]
+    );
+
+    const kyuyourin = L.imageOverlay(
+        'data/kyuyourin.jpg', bounds, { opacity: 0.7, maxNativeZoom: 18 }
+    );
+
+
+/* ---------- CSVレイヤー読込 ---------- */
+    function createGeoCsv(url, defaultIcon) {
+
+        const layer = L.geoCsv(null, {
+            titles: ['lat', 'lng', 'icon', 'popup'],
+            firstLineTitles: false,
+            fieldSeparator: ',',
+
+            onEachFeature: (feature, layer) => {
+                layer.bindPopup(feature.properties.popup);
+            },
+
+            pointToLayer: (feature, latlng) => {
+                return L.marker(latlng, {
+                    icon: L.icon({
+                        iconUrl: feature.properties.icon || defaultIcon,
+                        shadowUrl: 'marker/shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [10, 43],
+                        shadowSize: [41, 41],
+                        shadowAnchor: [10, 43]
+                    })
+                });
+            }
+        });
+
+        $.ajax({
+            beforeSend: xhr => {
+                xhr.overrideMimeType('text/csv;charset=UTF-8');
+            },
+            type: 'GET',
+            dataType: 'text',
+            url: url
+        }).done(data => layer.addData(data));
+
+        return layer;
+    }
+
+
+/* ---------- レイヤーコンテナの中身 ------------- */
+
+    const baseMaps = {
+        "地理院地図(標準)": gsi,
+        "地理院衛星写真": gsiPhoto,
+　　　　"OpenStreetMap": osm,
+        "Google Map": google
+    };
+　　const overlays = {
+        "富士山休養林コース図": kyuyourin,
+        "起伏を強調させる": gsirehillshademap,
+        "360度パノラマ写真": createGeoCsv('data/fujiforest.csv', ''),
+    };
+
+kyuyourin.addTo(map);   // ★ デフォルトON
+
+/* ======================================================
+       UIコンテナ配置
+    ====================================================== */
+
+/* ---------- レイヤーコンテナ ------------- */
+
+    L.control.layers(baseMaps, overlays, {
+        position: "topleft",
+        collapsed: true //コンテナへ格納
+    }).addTo(map);
+
+/* ---------- 地図スケール ------------- */
+
+    L.control.scale({
+        position: "bottomright",
+　　　　imperial: false
+　　 }).addTo(map);
+
+/* ---------- GPSスイッチ ------------- */
+
+    L.control.locate({
+    　position: "topright",
+    　drawMarker: false,      // ← これが最重要
+    　drawCircle: false,
+    　showCompass: false,     // ← これを追加
+    　watch: true,
+    　setView: 'once',
+      initialZoomLevel: 14 ,
+    　locateOptions: { enableHighAccuracy: true }
+    }).addTo(map);
+
+
+/* ======================================================
+       GPS（Locate）
+    ====================================================== */
+
+/* ---------- 現在地アイコン制御 ------------- */
+    
+function setArrowColor(color) {
+    const arrow = myMarker?.getElement()?.querySelector('#myArrow');
+    if (!arrow) return;
+    arrow.setAttribute('fill', color);
+}
+
+
+map.on('locateactivate', () => {
+    isLocateActive = true;
+    setArrowColor('#ff0000');   // 赤
+    requestOrientationPermission();
+});
+
+map.on('locatedeactivate', () => {
+    isLocateActive = false;
+    setArrowPulse(false);
+setArrowColor('#888888');   // グレー
+    });
+
+
+map.on('locationfound', e => {
+
+    if (!myMarker) {
+        myMarker = L.marker(e.latlng, { icon: myArrowIcon }).addTo(map);
+    } else {
+        myMarker.setLatLng(e.latlng);
+    }
+
+    // ★ ここが超重要
+    if (isLocateActive) {
+        setArrowColor('#ff0000');   // GPS ONなら赤
+    } else {
+        setArrowColor('#888888');   // GPS OFFならグレー
+    }
+
+    setArrowPulse(true);
+});
+
+}
+
+/* ---------- 現在地アイコンの鼓動 ---------- */
+function setArrowPulse(on) {
+    const svg = myMarker?.getElement()?.querySelector('.arrow-svg');
+    if (!svg) return;
+    svg.classList.toggle('pulsing', on);
+}
+
+/* ==========================================================
+   方位センサー
+========================================================== */
+function requestOrientationPermission() {
+    if (typeof DeviceOrientationEvent?.requestPermission === "function") {
+        DeviceOrientationEvent.requestPermission().then(res => {
+            if (res === 'granted')
+                window.addEventListener('deviceorientation', handleOrientation, true);
+        });
+    } else {
+        window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    }
+}
+
+function handleOrientation(e) {
+    let heading = e.webkitCompassHeading || e.alpha;
+    if (!heading) return;
+    const diff = ((heading - currentBearing + 540) % 360) - 180;
+    currentBearing += diff * smooth;
+    map.setBearing(currentBearing);
+}
+
+/* ---------- 起動 ---------- */
+
+init();
+
+</script>
+
+
+</body>
+</html>
+
