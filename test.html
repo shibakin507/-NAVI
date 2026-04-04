@@ -127,54 +127,6 @@ var gsiattr = "<a href='https://maps.gsi.go.jp/development/ichiran.html' target=
     }
 
 
-/* ---------- マークポイント読込( html書き込データみから) ---------- */
-/* ----------
-// 複数ポイントの配列（緯度, 経度, 表示名）
-const points = [{
-                 lat: 35.335993,
-                 lng: 138.800261, 
-                name: "<center>太郎坊からの富士山<br>Copyright (c)  国土交通省・富士砂防事務所<br>\
-                       ((((( 現在カメラ調整中です )))))\
-                       <img src='https://www.cbr.mlit.go.jp/fujisabo/camera/images/00032.jpg' width= '240' height='140' >\
-                       </center> " 
-                 },
-
-　              { 
-                 lat: 35.305214,
-                 lng: 138.776137,
-                name: "<center>片蓋山からの富士山<br>Copyright (c)  国土交通省・富士砂防事務所 <br>\
-                       <img src='https://www.cbr.mlit.go.jp/fujisabo/camera/images/00039.jpg' width= '240' height='140' >\
-                       </center>" 
-                 },
-
-                {
-                 lat: 35.306629, 
-                 lng: 138.771921, 
-                name: "<center>水ヶ塚 / 富士公園太郎坊線<br>Copyright (c) 静岡県・富士土木事務所<br>\
-                       <img src='http://fujilive.pref.shizuoka.jp/fuji/02_mizugazuka/mobile_cam_mizugazuka.jpg' width= '240' height='140' >\
-                       <img src= 'http://fujilive.pref.shizuoka.jp/fuji/02_mizugazuka/mobile_temp_mizugazuka.gif' width= '30' height='140' >\
-                       </center>"
-                 },
-
-                { 
-                 lat: 35.302614,
-                 lng: 138.749986, 
-                name: "<center>二合目/ 富士宮冨士公園線<br>Copyright (c) 静岡県・富士土木事務所<br>\
-                       <img src='http://fujilive.pref.shizuoka.jp/fuji/03_fujinomiya/mobile_cam_fujinomiya.jpg' width= '240' height='140' >\
-                       <img src= 'http://fujilive.pref.shizuoka.jp/fuji/03_fujinomiya/mobile_temp_fujinomiya.gif' width= '30' height='140' >\
-                       </center>" 
-                 },
-                
-                {
-                 lat: 35.221958,
-                 lng: 138.621798, 
-                name: "<center>富士宮市役所からの富士山<br>Copyright (c) 富士宮市 <br>\
-                       <img src='https://www.fujinomiya-camera.jp/10photo/new.jpg' width= '240' height='140' >\
-                       </center>"
-                },
-];
-
----------------------------------------- */
 
 
 /* ---------- 河川監視カメラ（富士土木）CGI対応   ---------- */
@@ -258,8 +210,6 @@ const river_sea_cameras = [
     title: "淀師河川監視カメラ"
   },
 
-
-
 {
     lat: 35.21544,
     lng: 138.6123,
@@ -287,20 +237,12 @@ const river_sea_cameras = [
     title: "内房境川合流部河川監視カメラ"
   },
 
-
-
   {
     lat: 35.23163,
     lng: 138.5349,
     id: "2085",
     title: "稲子川河川監視カメラ"
   },
-
-
-
-
-
-
 
 ];
 
@@ -325,15 +267,10 @@ const river_sea_cameraIcon = L.icon({
 
 
 
-// river_sea(LayerGroup)にまとめる
+/* ----------  river_sea(LayerGroup)にまとめる------------- */
+
 
 const river_sea = L.layerGroup();
-
-// ▼ point
-//points.forEach(p => {
-//  const marker = L.marker([p.lat, p.lng], {icon: river_sea_cameraIcon}).bindPopup(p.name);
-//  river_sea.addLayer(marker);
-//});
 
 // ▼ river_sea_cameras
 river_sea_cameras.forEach(c => {
@@ -342,15 +279,9 @@ river_sea_cameras.forEach(c => {
   river_sea.addLayer(marker);
 });
 
-
 // ▼ data/rivercam.csvを追加
 const riverCsvLayer = createGeoCsv('data/rivercam.csv', '');
 river_sea.addLayer(riverCsvLayer);
-
-
-
-
-
 
 
 
@@ -366,11 +297,14 @@ river_sea.addLayer(riverCsvLayer);
         "富士火山地形分類": kazan,
         "富士山ハザードマップ": hazardmap,
         "地図の起伏を強調する": gsirehillshademap,
-        //"360度パノラマ写真を見る": createGeoCsv('data/****.csv', ''),
-        "河川ライブカメラを見る": river_sea ,
+        "富士山ライブカメラ": createGeoCsv('data/fujicam.csv', ''),
+        "河川ライブカメラ": river_sea ,
     };
 
 // kyuyourin.addTo(map);   // ★ デフォルトON
+
+
+
 
 /* ======================================================
        UIコンテナ配置
