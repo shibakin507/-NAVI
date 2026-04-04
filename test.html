@@ -1,3 +1,7 @@
+レイヤーコンテナの中のriver_seaをチェックしてcreateGeoCsv('data/rivercam.csv', '')も同時に出すにはどうしたらいいですか？
+
+
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -324,13 +328,12 @@ const river_sea_cameraIcon = L.icon({
 
 
 
-// 河川＆海ライブカメラをriver_sea(LayerGroup)にまとめる
+// river_sea(LayerGroup)にまとめる
 
 const river_sea = L.layerGroup();
 
-// ▼ rivercam.csvを読む
+// ▼ point
 points.forEach(p => {
-  createGeoCsv('data/rivercam.csv', '');
   const marker = L.marker([p.lat, p.lng], {icon: river_sea_cameraIcon}).bindPopup(p.name);
   river_sea.addLayer(marker);
 });
@@ -343,7 +346,9 @@ river_sea_cameras.forEach(c => {
 });
 
 
-
+// ▼ ★ ここを追加
+const riverCsvLayer = createGeoCsv('data/rivercam.csv', '');
+river_sea.addLayer(riverCsvLayer);
 
 
 
@@ -364,7 +369,7 @@ river_sea_cameras.forEach(c => {
         "富士火山地形分類": kazan,
         "富士山ハザードマップ": hazardmap,
         "地図の起伏を強調する": gsirehillshademap,
-        //"360度パノラマ写真を見る": createGeoCsv('data/rivercam.csv', ''),
+        //"360度パノラマ写真を見る": createGeoCsv('data/****.csv', ''),
         "河川ライブカメラを見る": river_sea ,
     };
 
