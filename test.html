@@ -54,7 +54,7 @@ var gsiattr = "<a href='https://maps.gsi.go.jp/development/ichiran.html' target=
     const gsi = L.tileLayer(
         'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', 
         { attribution: gsiattr, maxZoom: 18 }
-    ).addTo(map);
+    );
 
     const gsiPhoto = L.tileLayer(
         'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',
@@ -64,7 +64,7 @@ var gsiattr = "<a href='https://maps.gsi.go.jp/development/ichiran.html' target=
 　　const osm = L.tileLayer(
         'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         { attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', maxZoom: 18 }
-    );
+    ).addTo(map);
 
     
 
