@@ -27,6 +27,14 @@ html, body, #mapcontainer {
 .leaflet-control-rotate {
     display: none !important;
 }
+/* iOSのガクガク対策 */
+.leaflet-image-layer,
+.leaflet-map-pane,
+.leaflet-overlay-pane {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+}
 
 /* =============================
    現在地アイコンの鼓動アニメーション
@@ -131,7 +139,10 @@ function init() {
     map = L.map('mapcontainer', {
         zoomControl: false,
         rotate: true,
-        bearing: 0
+        bearing: 0,
+        zoomAnimation: true, //以下iOSのガクガク対策
+        zoomAnimationThreshold: 1,
+        preferCanvas: true 
     }).setView([35.35154, 138.76977], 15);
 
     /* ---------- ベース地図 ---------- */
