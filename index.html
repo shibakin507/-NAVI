@@ -50,14 +50,7 @@
         display: none !important;
     }
   
-   /* iosのガクガク対策 */
-   .leaflet-image-layer,
-   .leaflet-map-pane,
-   .leaflet-overlay-pane {
-       transform: translateZ(0);
-       will-change: transform;
-       backface-visibility: hidden;
-   }
+  
 
 
 /* ================= 鼓動アニメ ================= */
@@ -132,9 +125,7 @@ function init() {
         rotate: true,
         bearing: 0,
         compass: false,
-        zoomAnimation: true,  //以下iosのガクガク対策 
-        zoomAnimationThreshold: 1,
-        preferCanvas: true
+        zoomAnimation: 0 
     });
 
   //  const startPoint = [35.35, 138.57];
