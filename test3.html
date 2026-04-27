@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>Mt.Fuji 3DMap Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.147.0/examples/js/controls/TrackballControls.js"></script>
+
+    <style>
+        body { 
+            margin: 0; 
+            display: flex; 
+            height: 100vh; 
+            font-family: 'Helvetica Neue', Arial, sans-serif; 
+            overflow: hidden; 
+            background: #1a1a1a; 
+            color: #fff; 
+        }
+
+        /* 画面分割設定 */
+        #map-container { width: 40%; height: 100%; border-right: 1px solid #444; position: relative; }
+        #map { width: 100%; height: 100%; }
+        #webgl-container { width: 60%; height: 100%; position: relative; }
+        #webgl { width: 100%; height: 100%; }
+
+        /* UIパネル */
+        .panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            width: 180px;
+            max-height: 90vh; /* 画面からはみ出さないように */
+            overflow-y: auto;  /* 中身が多い場合はスクロール */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 1px solid #444;
+        }
+
+        /* スマホ横画面（高さが短い画面）用の調整 */
+        @media screen and (max-height: 450px) {
+            .panel {
+                width: 150px;
+                padding: 8px;
+                font-size: 10px;
+            }
+            h2 { font-size: 11px !important; }
+            .btn-main { padding: 6px !important; font-size: 10px; }
+            .control-item { margin-bottom: 8px !important; }
+        }
+
+        h2 { font-size: 14px; margin-top: 0; color: #e67e22; }
+        hr { border: 0; border-top: 1px solid #444; margin: 8px 0; }
+
+        .btn-main {
+            background: #e67e22;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            transition: background 0.3s;
+        }
+        .btn-main:hover { background: #d35400; }
+
+        .control-item { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 3px; color: #aaa; font-size: 10px; }
+        input[type="range"] { width: 100%; cursor: pointer; }
+        
+        #status { color: #f1c40f; font-weight: bold; margin-bottom: 10px; display: none; }
+
+        .footer-text {
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+            z-index: 1000;
+            color: #ffffff;
+            font-size: 10px;
+            opacity: 0.6;
+        }
+        a { color: #fff; text-decoration: underline; }
+       
+    </style>
+</head>
+<body>
+
+<div id="map-container">
+    <div id="map"></div>
+    <div class="panel">
+        <h2>① エリア選択</h2>
+        <hr>
+        <div id="status">処理中...</div>
+        <button class="btn-main" onclick="start3DRender()">3D地図を生成</button>
+        <p style="margin: 5px 0;">オレンジ枠内を3D化</p>
+        <div style="font-size: 9px; color: #ffadad; line-height: 1.3;">
+            ⚠️ 広範囲は動作低下の要因になります
+        </div>
+    </div>
+</div>
+
+<div id="webgl-container">
+    <div id="webgl"></div>
+    <div class="panel">
+        <h2>② 3D地図の調整</h2>
+        <hr>
+        <div class="control-item">
+            <label>地形の高さ: <span id="hVal">0.02</span></label>
+            <input id="hSlide" type="range" min="0" max="0.08" step="0.001" value="0.02" oninput="update3D()">
+        </div>
+        <div class="control-item">
+            <label>色別標高（透過）: <span id="o1Val">0.50</span></label>
+            <input id="o1Slide" type="range" min="0" max="1" step="0.01" value="0.50" oninput="update3D()">
+        </div>
+        <div class="control-item">
+            <label>陰影起伏（透過）: <span id="o2Val">0.50</span></label>
+            <input id="o2Slide" type="range" min="0" max="1" step="0.01" value="0.50" oninput="update3D()">
+        </div>
+        <div style="background: rgba(255,255,255,0.05); padding: 6px; border-radius: 4px; font-size: 9px;">
+            <strong style="color: #e67e22;">操作：</strong> 左:回転 / 右:移動 / 拡大:ピンチ
+        </div>
+    </div>
+    <div class="footer-text">
+        <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">地理院タイル</a> / 富士山Walker
+    </div>
+</div>
+
+<script>
+var map, rect;
+var scene, camera, renderer, controls, terrainMesh, terrainMaterial;
+var rawHeights = [];
+
+function initMap() {
+    map = L.map('map').setView([35.3606, 138.7273], 13);
+    L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', {
+        attribution: "GSI"
+    }).addTo(map);
+
+    rect = L.rectangle([[35.37, 138.71], [35.35, 138.74]], {
+        color: "#e67e22", 
+        fillOpacity: 0.1,
+        weight: 2
+    }).addTo(map);
+
+    map.on('move', updateRect);
+    updateRect();
+}
+
+function updateRect() {
+    var center = map.getCenter();
+    var z = map.getZoom();
+    var delta = 0.02 * Math.pow(2, 13 - z); 
+    rect.setBounds([
+        [center.lat + delta, center.lng - delta * 1.5],
+        [center.lat - delta, center.lng + delta * 1.5]
+    ]);
+}
+
+function latLngToTile(lat, lng, z){
+    var x = Math.floor((lng + 180) / 360 * Math.pow(2, z));
+    var y = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
+    return {x, y};
+}
+
+function initThree() {
+    var el = document.getElementById("webgl");
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(el.clientWidth, el.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio); // 解像度向上
+    el.appendChild(renderer.domElement);
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a1a);
+    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+
+    camera = new THREE.PerspectiveCamera(45, el.clientWidth / el.clientHeight, 0.1, 10000);
+    camera.position.set(0, -200, 200);
+    camera.up.set(0, 0, 1);
+
+    controls = new THREE.TrackballControls(camera, renderer.domElement);
+    controls.rotateSpeed = 2.0; // スマホ用に感度調整
+    
+    animate();
+}
+
+// 画面リサイズ対応
+window.addEventListener('resize', () => {
+    if (map) map.invalidateSize();
+    var el = document.getElementById("webgl");
+    if (renderer && camera) {
+        renderer.setSize(el.clientWidth, el.clientHeight);
+        camera.aspect = el.clientWidth / el.clientHeight;
+        camera.updateProjectionMatrix();
+    }
+});
+
+function animate() {
+    requestAnimationFrame(animate);
+    if(controls) controls.update();
+    renderer.render(scene, camera);
+}
+
+function start3DRender() {
+    document.getElementById("status").style.display = "block";
+    var b = rect.getBounds();
+    var z = 14; 
+    var t_nw = latLngToTile(b.getNorth(), b.getWest(), z);
+    var t_se = latLngToTile(b.getSouth(), b.getEast(), z);
+    var minX = t_nw.x, maxX = t_se.x;
+    var minY = t_nw.y, maxY = t_se.y;
+    var totalTiles = (maxX - minX + 1) * (maxY - minY + 1);
+
+    if (totalTiles > 64) { // スマホ向けに閾値を少し厳しめに
+        if (!confirm("タイル数 ("+ totalTiles +") が多いため重くなる可能性があります。続行しますか？")) {
+            document.getElementById("status").style.display = "none";
+            return;
+        }
+    }
+    fetchDEM(minX, minY, maxX, maxY, z);
+}
+
+function fetchDEM(minX, minY, maxX, maxY, z) {
+    var tx = maxX - minX + 1, ty = maxY - minY + 1;
+    var cvs = document.createElement("canvas"); 
+    cvs.width = tx * 256; cvs.height = ty * 256;
+    var ctx = cvs.getContext("2d");
+    var total = tx * ty, count = 0;
+
+    for(let x = minX; x <= maxX; x++){
+        for(let y = minY; y <= maxY; y++){
+            let img = new Image(); 
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+                ctx.drawImage(img, (x - minX) * 256, (y - minY) * 256);
+                if(++count === total) buildThreeD(ctx, cvs.width, cvs.height, minX, minY, maxX, maxY, z);
+            };
+            img.onerror = () => { 
+                if(++count === total) buildThreeD(ctx, cvs.width, cvs.height, minX, minY, maxX, maxY, z); 
+            };
+            img.src = `https://cyberjapandata.gsi.go.jp/xyz/dem_png/${z}/${x}/${y}.png`;
+        }
+    }
+}
+
+function buildThreeD(demCtx, w, h, minX, minY, maxX, maxY, z) {
+    if(terrainMesh) {
+        scene.remove(terrainMesh);
+        terrainMesh.geometry.dispose();
+        terrainMesh.material.dispose();
+    }
+
+    var imgData = demCtx.getImageData(0, 0, w, h).data;
+    var geom = new THREE.PlaneGeometry(150, 150 * (h/w), w - 1, h - 1);
+    rawHeights = [];
+    var pos = geom.attributes.position.array;
+
+    for (var i = 0; i < w * h; i++) {
+        var r = imgData[i*4], g = imgData[i*4+1], b = imgData[i*4+2];
+        var val = r * 65536 + g * 256 + b;
+        var hgt = (val < 8388608) ? val * 0.01 : (val - 16777216) * 0.01;
+        rawHeights.push(hgt);
+        pos[i*3+2] = hgt * 0.02; 
+    }
+    geom.computeVertexNormals();
+
+    load3Textures(minX, minY, maxX, maxY, z, (baseTex, overlay1, overlay2) => {
+        terrainMaterial = new THREE.MeshPhongMaterial({ map: baseTex, side: THREE.DoubleSide });
+        
+        terrainMaterial.onBeforeCompile = function (shader) {
+            shader.uniforms.overlay1 = { value: overlay1 };
+            shader.uniforms.overlay2 = { value: overlay2 };
+            shader.uniforms.opacity1 = { value: parseFloat(document.getElementById("o1Slide").value) };
+            shader.uniforms.opacity2 = { value: parseFloat(document.getElementById("o2Slide").value) };
+            terrainMaterial.userData.shader = shader;
+
+            shader.fragmentShader = `
+                uniform sampler2D overlay1;
+                uniform sampler2D overlay2;
+                uniform float opacity1;
+                uniform float opacity2;
+            ` + shader.fragmentShader;
+
+            shader.fragmentShader = shader.fragmentShader.replace(
+                '#include <map_fragment>',
+                `
+                #include <map_fragment>
+                vec4 col1 = texture2D(overlay1, vUv);
+                vec4 col2 = texture2D(overlay2, vUv);
+                diffuseColor.rgb = mix(diffuseColor.rgb, col1.rgb, opacity1);
+                diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * col2.rgb, opacity2);
+                `
+            );
+        };
+
+        terrainMesh = new THREE.Mesh(geom, terrainMaterial);
+        scene.add(terrainMesh);
+
+        geom.computeBoundingSphere();
+        var c = geom.boundingSphere.center;
+        var r = geom.boundingSphere.radius;
+        controls.target.set(c.x, c.y, c.z);
+        camera.position.set(c.x, c.y - r * 1.5, c.z + r);
+
+        document.getElementById("status").style.display = "none";
+        update3D();
+    });
+}
+
+function load3Textures(minX, minY, maxX, maxY, z, callback) {
+    var tx = maxX - minX + 1, ty = maxY - minY + 1;
+    var canvases = [1, 2, 3].map(() => {
+        let c = document.createElement("canvas"); c.width = tx*256; c.height = ty*256; return c;
+    });
+    var ctxs = canvases.map(c => c.getContext("2d"));
+    var urls = ["std", "relief", "hillshademap"];
+    var total = tx * ty * 3, count = 0;
+
+    for(let i=0; i<3; i++) {
+        for(let x = minX; x <= maxX; x++){
+            for(let y = minY; y <= maxY; y++){
+                let img = new Image(); img.crossOrigin = "anonymous";
+                img.onload = () => {
+                    ctxs[i].drawImage(img, (x - minX) * 256, (y - minY) * 256);
+                    if(++count === total) callback(
+                        new THREE.CanvasTexture(canvases[0]),
+                        new THREE.CanvasTexture(canvases[1]),
+                        new THREE.CanvasTexture(canvases[2])
+                    );
+                };
+                img.onerror = () => { if(++count === total) ; };
+                img.src = `https://cyberjapandata.gsi.go.jp/xyz/${urls[i]}/${z}/${x}/${y}.png`;
+            }
+        }
+    }
+}
+
+function update3D() {
+    if (!terrainMesh) return;
+    var h = parseFloat(document.getElementById("hSlide").value);
+    var o1 = parseFloat(document.getElementById("o1Slide").value);
+    var o2 = parseFloat(document.getElementById("o2Slide").value);
+
+    document.getElementById("hVal").innerText = h.toFixed(3);
+    document.getElementById("o1Val").innerText = o1.toFixed(2);
+    document.getElementById("o2Val").innerText = o2.toFixed(2);
+
+    var pos = terrainMesh.geometry.attributes.position.array;
+    for (var i = 0; i < rawHeights.length; i++) {
+        pos[i*3+2] = rawHeights[i] * h;
+    }
+    terrainMesh.geometry.attributes.position.needsUpdate = true;
+
+    if (terrainMaterial.userData.shader) {
+        terrainMaterial.userData.shader.uniforms.opacity1.value = o1;
+        terrainMaterial.userData.shader.uniforms.opacity2.value = o2;
+    }
+}
+
+window.onload = () => {
+    initMap();
+    initThree();
+};
+</script>
+</body>
+</html>
