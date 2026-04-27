@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>Mt.Fuji 3DMap - Default Adjusted</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.147.0/examples/js/controls/TrackballControls.js"></script>
+
+    <style>
+        body { margin: 0; display: flex; flex-direction: row; height: 100vh; font-family: sans-serif; overflow: hidden; background: #1a1a1a; color: #fff; }
+        @media screen and (max-width: 768px) {
+            body { flex-direction: column; }
+            #map-container { width: 100% !important; height: 45% !important; border-bottom: 1px solid #444; }
+            #webgl-container { width: 100% !important; height: 55% !important; }
+        }
+        #map-container { width: 40%; height: 100%; position: relative; }
+        #map { width: 100%; height: 100%; }
+        
+        #fixed-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 70%;
+            max-width: 500px;
+            max-height: 500px;
+            border: 3px solid #e67e22;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+            z-index: 2000;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #fixed-frame::after {
+            content: "3D化エリア";
+            color: #e67e22;
+            font-size: 11px;
+            font-weight: bold;
+            background: rgba(0,0,0,0.7);
+            padding: 2px 8px;
+            position: absolute;
+            top: -25px;
+            border-radius: 3px;
+        }
+
+        #webgl-container { width: 60%; height: 100%; position: relative; }
+        #webgl { width: 100%; height: 100%; }
+        
+        .panel { position: absolute; top: 10px; left: 10px; z-index: 1000; background: rgba(0,0,0,0.85); padding: 12px; border-radius: 8px; border: 1px solid #444; min-width: 170px; }
+        .btn-main { background: #e67e22; color: white; border: none; padding: 10px; width: 100%; cursor: pointer; border-radius: 4px; font-weight: bold; margin-bottom: 5px; }
+        
+        .control-item { margin-top: 10px; }
+        label { display: block; margin-bottom: 3px; color: #aaa; font-size: 11px; }
+        .val-text { color: #fff; float: right; font-weight: bold; }
+        input[type="range"] { width: 100%; cursor: pointer; accent-color: #e67e22; }
+        #status { color: #f1c40f; font-weight: bold; display: none; margin-bottom: 5px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div id="map-container">
+    <div id="map"></div>
+    <div id="fixed-frame"></div>
+    <div class="panel">
+        <div id="status">3D生成中...</div>
+        <button class="btn-main" onclick="start3DRender()">3D表示に更新</button>
+        <p style="margin:0; font-size:10px; opacity: 0.8;">枠内に地形を合わせてください</p>
+    </div>
+</div>
+
+<div id="webgl-container">
+    <div id="webgl"></div>
+    <div class="panel" style="top: auto; bottom: 30px;">
+        <div class="control-item">
+            <label>地形の高さ: <span id="hVal" class="val-text">0.020</span></label>
+            <input id="hSlide" type="range" min="0" max="0.1" step="0.001" value="0.02" oninput="update3D()">
+        </div>
+        <div class="control-item">
+            <label>色別標高（透過）: <span id="o1Val" class="val-text">0.50</span></label>
+            <input id="o1Slide" type="range" min="0" max="1" step="0.01" value="0.5" oninput="update3D()">
+        </div>
+        <div class="control-item">
+            <label>陰影起伏（透過）: <span id="o2Val" class="val-text">0.50</span></label>
+            <input id="o2Slide" type="range" min="0" max="1" step="0.01" value="0.5" oninput="update3D()">
+        </div>
+    </div>
+</div>
+
+<script>
+var map, scene, camera, renderer, controls, terrainMesh, terrainMaterial, rawHeights = [];
+
+function initMap() {
+    // 縮小表示を制限 (minZoom: 10)
+    map = L.map('map', { 
+        minZoom: 11, 
+        zoomControl: false 
+    }).setView([35.3606, 138.7273], 13);
+    
+    L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png').addTo(map);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+}
+
+function initThree() {
+    var el = document.getElementById("webgl");
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(el.clientWidth, el.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    el.appendChild(renderer.domElement);
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a1a);
+    scene.add(new THREE.AmbientLight(0xffffff, 1.8));
+    camera = new THREE.PerspectiveCamera(45, el.clientWidth/el.clientHeight, 1, 15000);
+    camera.position.set(0, -250, 250);
+    camera.up.set(0, 0, 1);
+    controls = new THREE.TrackballControls(camera, renderer.domElement);
+    renderLoop();
+}
+
+function renderLoop() {
+    requestAnimationFrame(renderLoop);
+    if(controls) controls.update();
+    renderer.render(scene, camera);
+}
+
+function start3DRender() {
+    document.getElementById("status").style.display = "block";
+    var frame = document.getElementById('fixed-frame').getBoundingClientRect();
+    var mapEl = document.getElementById('map').getBoundingClientRect();
+    var nwPoint = L.point(frame.left - mapEl.left, frame.top - mapEl.top);
+    var sePoint = L.point(frame.right - mapEl.left, frame.bottom - mapEl.top);
+    var nw = map.containerPointToLatLng(nwPoint);
+    var se = map.containerPointToLatLng(sePoint);
+    
+    var z = 14; 
+    var x1 = Math.floor((nw.lng + 180) / 360 * Math.pow(2, z));
+    var y1 = Math.floor((1 - Math.log(Math.tan(nw.lat * Math.PI / 180) + 1 / Math.cos(nw.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
+    var x2 = Math.floor((se.lng + 180) / 360 * Math.pow(2, z));
+    var y2 = Math.floor((1 - Math.log(Math.tan(se.lat * Math.PI / 180) + 1 / Math.cos(se.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
+
+    var tx_count = x2 - x1 + 1, ty_count = y2 - y1 + 1;
+    if(tx_count * ty_count > 100) z = 13; 
+    
+    x1 = Math.floor((nw.lng + 180) / 360 * Math.pow(2, z));
+    y1 = Math.floor((1 - Math.log(Math.tan(nw.lat * Math.PI / 180) + 1 / Math.cos(nw.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
+    x2 = Math.floor((se.lng + 180) / 360 * Math.pow(2, z));
+    y2 = Math.floor((1 - Math.log(Math.tan(se.lat * Math.PI / 180) + 1 / Math.cos(se.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
+    tx_count = x2 - x1 + 1; ty_count = y2 - y1 + 1;
+
+    var cvs = document.createElement("canvas"); cvs.width = tx_count * 256; cvs.height = ty_count * 256;
+    var ctx = cvs.getContext("2d"), count = 0, total = tx_count * ty_count;
+
+    for(let x = x1; x <= x2; x++){
+        for(let y = y1; y <= y2; y++){
+            let img = new Image(); img.crossOrigin = "anonymous";
+            img.onload = () => {
+                ctx.drawImage(img, (x - x1) * 256, (y - y1) * 256);
+                if(++count === total) build3D(ctx, cvs.width, cvs.height, x1, y1, x2, y2, z);
+            };
+            img.src = `https://cyberjapandata.gsi.go.jp/xyz/dem_png/${z}/${x}/${y}.png`;
+        }
+    }
+}
+
+function build3D(demCtx, w, h, x1, y1, x2, y2, z) {
+    if(terrainMesh) { scene.remove(terrainMesh); terrainMesh.geometry.dispose(); terrainMaterial.dispose(); }
+    var data = demCtx.getImageData(0, 0, w, h).data;
+    var seg = 126;
+    var geom = new THREE.PlaneGeometry(200, 200 * (h/w), seg, seg);
+    rawHeights = [];
+    var pos = geom.attributes.position.array;
+    for (let i = 0; i < geom.attributes.position.count; i++) {
+        let ix = Math.floor((i % (seg + 1)) * (w / (seg + 1)));
+        let iy = Math.floor(Math.floor(i / (seg + 1)) * (h / (seg + 1)));
+        let p = (iy * w + ix) * 4;
+        let v = data[p]*65536 + data[p+1]*256 + data[p+2];
+        let hgt = (v < 8388608) ? v * 0.01 : (v - 16777216) * 0.01;
+        rawHeights.push(hgt);
+        // 初期レンダリング時の高さを 0.02 に設定
+        pos[i*3+2] = hgt * 0.02;
+    }
+    geom.computeVertexNormals();
+
+    loadTextures(x1, y1, x2, y2, z, (tex0, tex1, tex2) => {
+        terrainMaterial = new THREE.MeshPhongMaterial({ map: tex0, side: THREE.DoubleSide });
+        terrainMaterial.onBeforeCompile = (shader) => {
+            shader.uniforms.overlay1 = { value: tex1 };
+            shader.uniforms.overlay2 = { value: tex2 };
+            shader.uniforms.opacity1 = { value: parseFloat(document.getElementById("o1Slide").value) };
+            shader.uniforms.opacity2 = { value: parseFloat(document.getElementById("o2Slide").value) };
+            terrainMaterial.userData.shader = shader;
+            shader.fragmentShader = `uniform sampler2D overlay1; uniform sampler2D overlay2; uniform float opacity1; uniform float opacity2;\n` + shader.fragmentShader;
+            shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `
+                #include <map_fragment>
+                vec4 col1 = texture2D(overlay1, vUv);
+                vec4 col2 = texture2D(overlay2, vUv);
+                diffuseColor.rgb = mix(diffuseColor.rgb, col1.rgb, opacity1);
+                diffuseColor.rgb *= mix(vec3(1.0), col2.rgb, opacity2);
+            `);
+        };
+        terrainMesh = new THREE.Mesh(geom, terrainMaterial);
+        scene.add(terrainMesh);
+        document.getElementById("status").style.display = "none";
+        update3D();
+        
+        geom.computeBoundingSphere();
+        controls.target.copy(geom.boundingSphere.center);
+        camera.position.set(geom.boundingSphere.center.x, geom.boundingSphere.center.y - 200, 200);
+    });
+}
+
+function loadTextures(x1, y1, x2, y2, z, callback) {
+    var tx = x2 - x1 + 1, ty = y2 - y1 + 1;
+    var layers = ["std", "relief", "hillshademap"];
+    var texs = [], loaded = 0;
+    layers.forEach((lyr, idx) => {
+        let cvs = document.createElement("canvas"); cvs.width = tx*256; cvs.height = ty*256;
+        let ctx = cvs.getContext("2d"), count = 0;
+        for(let x = x1; x <= x2; x++){
+            for(let y = y1; y <= y2; y++){
+                let img = new Image(); img.crossOrigin = "anonymous";
+                img.onload = () => {
+                    ctx.drawImage(img, (x - x1) * 256, (y - y1) * 256);
+                    if(++count === tx*ty) {
+                        texs[idx] = new THREE.CanvasTexture(cvs);
+                        if(++loaded === 3) callback(texs[0], texs[1], texs[2]);
+                    }
+                };
+                img.src = `https://cyberjapandata.gsi.go.jp/xyz/${lyr}/${z}/${x}/${y}.png`;
+            }
+        }
+    });
+}
+
+function update3D() {
+    if (!terrainMesh) return;
+    var h = parseFloat(document.getElementById("hSlide").value);
+    var o1 = parseFloat(document.getElementById("o1Slide").value);
+    var o2 = parseFloat(document.getElementById("o2Slide").value);
+    document.getElementById("hVal").innerText = h.toFixed(3);
+    document.getElementById("o1Val").innerText = o1.toFixed(2);
+    document.getElementById("o2Val").innerText = o2.toFixed(2);
+    var pos = terrainMesh.geometry.attributes.position.array;
+    for (let i = 0; i < rawHeights.length; i++) { pos[i*3+2] = rawHeights[i] * h; }
+    terrainMesh.geometry.attributes.position.needsUpdate = true;
+    if (terrainMaterial.userData.shader) {
+        terrainMaterial.userData.shader.uniforms.opacity1.value = o1;
+        terrainMaterial.userData.shader.uniforms.opacity2.value = o2;
+    }
+}
+
+window.onload = () => { initMap(); initThree(); };
+window.onresize = () => {
+    map.invalidateSize();
+    var el = document.getElementById("webgl");
+    renderer.setSize(el.clientWidth, el.clientHeight);
+    camera.aspect = el.clientWidth/el.clientHeight;
+    camera.updateProjectionMatrix();
+};
+</script>
+</body>
+</html>
